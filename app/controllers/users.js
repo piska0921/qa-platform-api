@@ -1,38 +1,36 @@
-const db = [{ name: "uuc" }]
+const User = require('../models/users')
+
 class usersController {
-    find(ctx) {
-        ctx.body = db
+    async find(ctx) {
+        ctx.body = await User.find()
     }
-    findById(ctx) {
-        if(ctx.params.id * 1 >= db.length){
-            ctx.throw(412, 'id not exists in db')
+    async findById(ctx) {
+        const user = await User.findById(ctx.params.id)
+        if (!user) {
+            ctx.throw(404, 'No such user')
         }
-        ctx.body = db[ctx.params.id * 1]
+        ctx.body = user
     }
-    create(ctx) {
+    async create(ctx) {
         ctx.verifyParams({
-            name: { type: 'string', required: true},
-            age: { type: 'number', required: false}
+            name: { type: 'string', required: true }
         })
-        db.push(ctx.request.body)
-        ctx.body = ctx.request.body
+        const user = await new User(ctx.request.body).save()
+        ctx.body = user
     }
-    update(ctx) {
-        if(ctx.params.id * 1 >= db.length){
-            ctx.throw(412, 'id not exists in db')
-        }
+    async update(ctx) {
         ctx.verifyParams({
-            name: { type: 'string', required: true},
-            age: { type: 'number', required: false}
+            name: { type: 'string', required: true }
         })
-        db[ctx.params.id * 1] = ctx.request.body
-        ctx.body = ctx.request.body
-    }
-    deleteById(ctx) {
-        if(ctx.params.id * 1 >= db.length){
-            ctx.throw(412, 'id not exists in db')
+        const user = await User.findByIdAndUpdate(ctx.params.id, ctx.request.body)
+        if (!user) {
+            ctx.throw(404, 'No such user')
         }
-        db.splice(ctx.params.id * 1, 1)
+        ctx.body = user
+    }
+    async deleteById(ctx) {
+        const user = await User.findByIdAndRemove(ctx.params.id)
+        if (!user) { ctx.throw(404, 'No such user')}
         ctx.status = 204
     }
 }

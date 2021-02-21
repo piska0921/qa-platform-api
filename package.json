@@ -15,6 +15,7 @@
     "koa-bodyparser": "^4.3.0",
     "koa-json-error": "^3.1.2",
     "koa-parameter": "^3.0.1",
-    "koa-router": "^10.0.0"
+    "koa-router": "^10.0.0",
+    "mongoose": "^5.11.17"
   }
 }
