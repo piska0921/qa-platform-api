@@ -1,7 +1,11 @@
 const Router = require('koa-router')
-const router = new Router({prefix: '/users'})
-const {find, findById, create, update, deleteById} = require('../controllers/users')
+const jsonwebtoken = require('jsonwebtoken')
+const jwt = require('koa-jwt')
+const router = new Router({ prefix: '/users' })
+const { find, findById, create, update, deleteById, login, checkOwner } = require('../controllers/users')
+const { secret } = require('../config')
 
+const auth = jwt({secret})
 
 router.get('/', find)
 
@@ -9,8 +13,10 @@ router.post('/', create)
 
 router.get('/:id', findById)
 
-router.put('/:id', update)
+router.patch('/:id', auth, checkOwner, update)
 
-router.delete('/:id', deleteById)
+router.delete('/:id', auth, checkOwner, deleteById)
+
+router.post('/login', login)
 
 module.exports = router
