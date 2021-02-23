@@ -4,15 +4,21 @@ const { secret } = require('../config')
 
 class usersController {
     async find(ctx) {
-        ctx.body = await User.find()
+        const page = ctx.query.page ? Math.max(ctx.query.page * 1, 1) : 3
+        const perPage = Math.max(ctx.query.per_page * 1, 1)
+        const skippedPage = (page - 1) * perPage
+        ctx.body = await User
+        .find({name : new RegExp(ctx.query.keyword)})
+        .limit(perPage).skip(skippedPage)
     }
     async findById(ctx) {
         //choose fields of data
-        const { fields } = ctx.query
+        const { fields='' } = ctx.query
         //filter(f => f) : filter empty fields
-        const selectedFields = fields.split(';').filter(f => f).map(field => ' +' + field).join('')
-        console.log(selectedFields)
+        const selectedFields = fields.split(';').filter(field => field).map(field => ' +' + field).join('')
         const user = await User.findById(ctx.params.id).select(selectedFields)
+        .populate('following locations industry employment.company employment.title education.school education.major')
+        
         if (!user) {
             ctx.throw(404, 'No such user')
         }
@@ -91,7 +97,7 @@ class usersController {
         if (!user) {ctx.throw(404, 'User not found')}
         await next()
     }
-    
+
     async follow(ctx) {
         const me = await User.findById(ctx.state.user._id).select('+following')
         if (!me.following.map(id => id.toString()).includes(ctx.params.id)) {
@@ -107,6 +113,34 @@ class usersController {
         const index = me.following.map(id => id.toString()).indexOf(ctx.params.id)
         if (index > -1) {
             me.following.splice(index, 1)
+            me.save()
+        }
+        ctx.status = 204
+    }
+
+    async listFollowingTopics(ctx) {
+        const user = await User.findById(ctx.params.id).select('+followingTopics').populate('followingTopics')
+        if (!user) {
+            ctx.throw(404, 'User not found')
+        }
+        ctx.body = user.followingTopics
+    }
+
+    async followTopic(ctx) {
+        const me = await User.findById(ctx.state.user._id).select('+followingTopics')
+        if (!me.followingTopics.map(id => id.toString()).includes(ctx.params.id)) {
+            me.followingTopics.push(ctx.params.id)
+            me.save()
+        }
+
+        ctx.status = 204
+    }
+
+    async unfollowTopic(ctx) {
+        const me = await User.findById(ctx.state.user._id).select('+followingTopics')
+        const index = me.followingTopics.map(id => id.toString()).indexOf(ctx.params.id)
+        if (index > -1) {
+            me.followingTopics.splice(index, 1)
             me.save()
         }
         ctx.status = 204
