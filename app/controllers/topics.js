@@ -1,10 +1,11 @@
 const Topic = require('../models/topics')
 const User = require('../models/users')
+const Question = require('../models/questions')
 
 class TopicController {
     async find(ctx) {
         //avoid negative number 
-        const page = ctx.query.page ? Math.max(ctx.query.page * 1, 1) : 3
+        const page = ctx.query.page ? Math.max(ctx.query.page * 1, 1) : 10
         const perPage = Math.max(ctx.query.per_page * 1, 1)
         const skippedPage = (page - 1) * perPage
         ctx.body = await Topic
@@ -47,6 +48,11 @@ class TopicController {
     async listTopicFollowers(ctx) {
         const followers = await User.find({followingTopics: ctx.params.id})
         ctx.body = followers
+    }
+
+    async listQuestionsUnderTopic(ctx){
+        const questions = await Question.find({topics: ctx.params.id})
+        ctx.body = questions
     }
 }
 

@@ -5,7 +5,7 @@ const router = new Router({ prefix: '/users' })
 const {
     find, findById, create, update, deleteById, login, checkOwner,
     listFollowing, follow, unfollow, listFollowers, checkUserExistence,
-    listFollowingTopics, followTopic, unfollowTopic
+    listFollowingTopics, followTopic, unfollowTopic, listQuestions
 } = require('../controllers/users')
 const { checkTopicExistence } = require('../controllers/topics')
 const { secret } = require('../config')
@@ -25,5 +25,6 @@ router.delete('/following/:id', auth, checkUserExistence, unfollow)
 router.get('/:id/followingTopics', listFollowingTopics)
 router.put('/followingTopics/:id', auth, checkTopicExistence, followTopic)
 router.delete('/followingTopics/:id', auth, checkTopicExistence, unfollowTopic)
+router.get('/:id/questions', listQuestions)
 
 module.exports = router
