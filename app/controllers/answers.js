@@ -45,8 +45,8 @@ class AnswerController {
     async checkAnswerExistence(ctx, next){
         const answer = await Answer.findById(ctx.params.id)
         if (!answer) {ctx.throw(404, 'Answer not found')}
-        //check whether the question id is correct
-        if(answer.questionId !== ctx.params.questionId){
+        //check whether the question id is correct (not needed for upvote and downvote)
+        if(ctx.params.questionId && answer.questionId !== ctx.params.questionId){
             ctx.throw(404, 'The answer not found for this question')
         }
         ctx.state.answer = answer

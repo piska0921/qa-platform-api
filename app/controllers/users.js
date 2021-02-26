@@ -1,6 +1,7 @@
 const jsonwebtoken = require('jsonwebtoken')
 const User = require('../models/users')
 const Question = require('../models/questions')
+const Answer = require('../models/answers')
 const { secret } = require('../config')
 
 class usersController {
@@ -9,17 +10,17 @@ class usersController {
         const perPage = Math.max(ctx.query.per_page * 1, 1)
         const skippedPage = (page - 1) * perPage
         ctx.body = await User
-        .find({name : new RegExp(ctx.query.keyword)})
-        .limit(perPage).skip(skippedPage)
+            .find({ name: new RegExp(ctx.query.keyword) })
+            .limit(perPage).skip(skippedPage)
     }
     async findById(ctx) {
         //choose fields of data
-        const { fields='' } = ctx.query
+        const { fields = '' } = ctx.query
         //filter(f => f) : filter empty fields
         const selectedFields = fields.split(';').filter(field => field).map(field => ' +' + field).join('')
         const user = await User.findById(ctx.params.id).select(selectedFields)
-        .populate('following locations industry employment.company employment.title education.school education.major')
-        
+            .populate('following locations industry employment.company employment.title education.school education.major')
+
         if (!user) {
             ctx.throw(404, 'No such user')
         }
@@ -89,13 +90,13 @@ class usersController {
     }
 
     async listFollowers(ctx) {
-        const followers = await User.find({following: ctx.params.id})
+        const followers = await User.find({ following: ctx.params.id })
         ctx.body = followers
     }
 
-    async checkUserExistence(ctx, next){
+    async checkUserExistence(ctx, next) {
         const user = await User.findById(ctx.params.id)
-        if (!user) {ctx.throw(404, 'User not found')}
+        if (!user) { ctx.throw(404, 'User not found') }
         await next()
     }
 
@@ -147,9 +148,71 @@ class usersController {
         ctx.status = 204
     }
 
-    async listQuestions(ctx){
-        const questions = await Question.find({questioner: ctx.params.id})
+    async listQuestions(ctx) {
+        const questions = await Question.find({ questioner: ctx.params.id })
         ctx.body = questions
+    }
+
+    async listUpvotedAnswers(ctx) {
+        const user = await User.findById(ctx.params.id).select('+upvotedAnswers').populate('upvotedAnswers')
+        if (!user) {
+            ctx.throw(404, 'User not found')
+        }
+        ctx.body = user.upvotedAnswers
+    }
+
+    async upvoteAnswer(ctx, next) {
+        const answerId = ctx.params.id
+        const me = await User.findById(ctx.state.user._id).select('+upvotedAnswers')
+        if (!me.upvotedAnswers.map(id => id.toString()).includes(answerId)) {
+            me.upvotedAnswers.push(answerId)
+            me.save()
+            await Answer.findByIdAndUpdate(answerId, { $inc: { voteCount: 1 } })
+        }
+        ctx.status = 204
+        await next()
+    }
+
+    async cancelUpvoteAnswer(ctx) {
+        const answerId = ctx.params.id
+        const me = await User.findById(ctx.state.user._id).select('+upvotedAnswers')
+        const answerIdx = me.upvotedAnswers.map(id => id.toString()).indexOf(answerId)
+        if (answerIdx > -1) {
+            me.upvotedAnswers.splice(answerIdx, 1)
+            me.save()
+            await Answer.findByIdAndUpdate(answerId, { $inc: { voteCount: -1 } })
+        }
+        ctx.status = 204
+    }
+
+    async listDownvotedAnswers(ctx) {
+        const user = await User.findById(ctx.params.id).select('+downvotedAnswers').populate('downvotedAnswers')
+        if (!user) {
+            ctx.throw(404, 'User not found')
+        }
+        ctx.body = user.downvotedAnswers
+    }
+
+    async downvoteAnswer(ctx,next) {
+        const answerId = ctx.params.id
+        const me = await User.findById(ctx.state.user._id).select('+downvotedAnswers')
+        if (!me.downvotedAnswers.map(id => id.toString()).includes(answerId)) {
+            me.downvotedAnswers.push(answerId)
+            me.save()
+        }
+        ctx.status = 204
+        await next()
+    }
+    
+    async cancelDownvoteAnswer(ctx) {
+        const answerId = ctx.params.id
+        const me = await User.findById(ctx.state.user._id).select('+downvotedAnswers')
+        const answerIdx = me.downvotedAnswers.map(id => id.toString()).indexOf(answerId)
+        if (answerIdx > -1) {
+            me.downvotedAnswers.splice(answerIdx, 1)
+            me.save()
+        }
+        ctx.status = 204
     }
 }
 

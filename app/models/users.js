@@ -35,6 +35,14 @@ const userSchema = new Schema({
     followingTopics: {
         type: [{ type: Schema.Types.ObjectId, ref: 'Topic' }],
         select: false
+    },
+    upvotedAnswers: {
+        type: [{ type: Schema.Types.ObjectId, ref: 'Answer' }],
+        select: false        
+    },
+    downvotedAnswers:{
+        type: [{ type: Schema.Types.ObjectId, ref: 'Answer' }],
+        select: false             
     }
 })
 
