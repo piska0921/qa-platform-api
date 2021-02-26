@@ -26,8 +26,9 @@ class QuestionController {
     }
     async create(ctx) {
         ctx.verifyParams({
-            title: {type: 'String', required: true},
-            description: {type: 'String', required: false}
+            title: {type: 'string', required: true},
+            description: {type: 'string', required: false},
+            topics: {type:'array', itemType: 'string', required: false}
         })
         const question = await new Question({...ctx.request.body, questioner: ctx.state.user._id}).save()
         ctx.body = question
@@ -39,11 +40,12 @@ class QuestionController {
     }
     async update(ctx){
         ctx.verifyParams({
-            title: {type: 'String', required: false},
-            description: {type: 'String', required: false}
+            title: {type: 'string', required: false},
+            description: {type: 'string', required: false},
+            topics: {type:'array', itemType: 'string', required: false}
         })
-        const question = await ctx.state.question.update(ctx.request.body)
-        ctx.body = question
+        await ctx.state.question.update(ctx.request.body)
+        ctx.body = ctx.state.question
     }
 
     async deleteById(ctx){
